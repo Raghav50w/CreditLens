@@ -11,8 +11,7 @@ the model's estimated probability. The result box is green when the outcome is
 good for the bank (offer accepted, loan repaid) and red when it is bad
 (default, customer leaving).
 
-**Not a production credit tool.** It is trained on public research datasets and
-has never been validated for real lending or customer decisions.
+**Live demo:** <https://creditlens-ahhi.onrender.com/>
 
 ## What it predicts
 
@@ -141,6 +140,9 @@ static/           the frontend
 tests/            pytest suite
 datasets/raw/     the original source files
 ```
+
+**Not a production credit tool.** It is trained on public research datasets and
+has never been validated for real lending or customer decisions.
 
 ## Credits
 
