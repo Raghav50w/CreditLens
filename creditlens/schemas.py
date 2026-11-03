@@ -4,28 +4,25 @@ import math
 
 from pydantic import BaseModel, ConfigDict
 
-from healthscan.config import DISEASE_META
+from creditlens.config import DATASET_META
 
 
 class PredictRequest(BaseModel):
     """The JSON body of a prediction request.
 
-    Feature values (Glucose, BMI, ...) differ per disease, so they arrive as
+    Feature values (balance, age, ...) differ per dataset, so they arrive as
     extra fields and are checked by `validate_features` against the bounds in
-    DISEASE_META.
+    DATASET_META.
     """
 
     model_config = ConfigDict(extra="allow")
 
-    disease: str
+    dataset: str
     model_type: str | None = None
 
-    def feature_values(self):
-        return self.model_extra or {}
 
-
-def validate_features(disease, features, values):
-    """Check every feature against its DISEASE_META bounds.
+def validate_features(dataset, features, values):
+    """Check every feature against its DATASET_META bounds.
 
     Returns (numbers, errors). `numbers` is in the same order as `features`.
     Every problem is collected so a user fixing the form sees all of them at
@@ -35,7 +32,7 @@ def validate_features(disease, features, values):
     errors = {}
 
     for name in features:
-        meta = DISEASE_META[disease]["features"][name]
+        meta = DATASET_META[dataset]["features"][name]
         label = meta["label"]
         raw = values.get(name)
 
@@ -53,9 +50,7 @@ def validate_features(disease, features, values):
             errors[name] = f"{label} must be a finite number."
             continue
 
-        unit = ""
-        if meta["unit"]:
-            unit = " " + meta["unit"]
+        unit = f" {meta['unit']}" if meta["unit"] else ""
 
         if number < meta["min"]:
             errors[name] = f"{label} must be at least {meta['min']:g}{unit}."

@@ -1,4 +1,4 @@
-/* HealthScanner - single stylesheet, no build step, no external fonts. */
+/* CreditLens - single stylesheet, no build step, no external fonts. */
 
 :root {
   --bg: #eef2f5;
@@ -252,13 +252,13 @@ button.loading .spinner {
   font-weight: 600;
 }
 
-.result.high {
+.result.bad {
   color: var(--danger);
   background-color: var(--danger-bg);
   border-color: var(--danger-line);
 }
 
-.result.low {
+.result.good {
   color: var(--safe);
   background-color: var(--safe-bg);
   border-color: var(--safe-line);

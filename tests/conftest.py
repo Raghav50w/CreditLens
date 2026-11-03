@@ -1,15 +1,15 @@
 """Shared test fixtures.
 
 Tests run against the real datasets and the real trained models, so run
-`python -m healthscan.ml.preprocess` and `python -m healthscan.ml.train`
+`python -m creditlens.ml.preprocess` and `python -m creditlens.ml.train`
 before `pytest`.
 """
 
 import pytest
 from fastapi.testclient import TestClient
 
-from healthscan.config import DISEASE_META
-from healthscan.main import app
+from creditlens.config import DATASET_META
+from creditlens.main import app
 
 
 @pytest.fixture
@@ -19,17 +19,19 @@ def client():
 
 @pytest.fixture
 def valid_payload():
-    """A request body that satisfies every diabetes validation rule."""
+    """A request body that satisfies every attrition validation rule."""
     return {
-        "disease": "diabetes",
+        "dataset": "attrition",
         "model_type": "random_forest",
-        "Glucose": 120,
-        "Insulin": 85,
-        "BMI": 28.4,
-        "Age": 45,
+        "Total_Trans_Ct": 40,
+        "Total_Trans_Amt": 2000.0,
+        "Total_Relationship_Count": 2,
+        "Total_Revolving_Bal": 0,
+        "Total_Amt_Chng_Q4_Q1": 0.5,
+        "Total_Ct_Chng_Q4_Q1": 0.4,
     }
 
 
 @pytest.fixture
-def diabetes_features():
-    return list(DISEASE_META["diabetes"]["features"])
+def attrition_features():
+    return list(DATASET_META["attrition"]["features"])

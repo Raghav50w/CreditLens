@@ -1,23 +1,23 @@
 /**
- * HealthScanner frontend.
+ * CreditLens frontend.
  *
- * The UI holds no knowledge of any specific disease or feature. Labels,
- * units, bounds, help text, dropdown options, and model accuracy all arrive
- * from /api/diseases, which reads them from healthscan.config.DISEASE_META.
- * Adding a disease therefore requires no change to this file.
+ * The UI holds no knowledge of any specific dataset or feature. Labels,
+ * units, bounds, help text and dropdown options all arrive
+ * from /api/datasets, which reads them from creditlens.config.DATASET_META.
+ * Adding a dataset therefore requires no change to this file.
  */
 
 (function () {
   'use strict';
 
   const state = {
-    diseases: {},
+    datasets: {},
     current: null,
   };
 
   const el = {
     form: document.getElementById('assessment-form'),
-    diseaseSelect: document.getElementById('disease-select'),
+    datasetSelect: document.getElementById('dataset-select'),
     modelSelect: document.getElementById('model-select'),
     fields: document.getElementById('dynamic-fields'),
     result: document.getElementById('result'),
@@ -28,21 +28,21 @@
 
   async function init() {
     try {
-      const response = await fetch('/api/diseases');
+      const response = await fetch('/api/datasets');
       if (!response.ok) throw new Error('HTTP ' + response.status);
 
       const payload = await response.json();
-      state.diseases = payload.diseases || {};
+      state.datasets = payload.datasets || {};
 
-      const names = Object.keys(state.diseases);
+      const names = Object.keys(state.datasets);
       if (names.length === 0) {
-        showError('No trained models are available. Run `python -m healthscan.ml.train`.');
+        showError('No trained models are available. Run `python -m creditlens.ml.train`.');
         el.submit.disabled = true;
         return;
       }
 
-      buildDiseaseSelect(names);
-      selectDisease(names[0]);
+      buildDatasetSelect(names);
+      selectDataset(names[0]);
     } catch (err) {
       console.error('Failed to load catalog:', err);
       showError('Could not reach the server. Is it running?');
@@ -52,28 +52,28 @@
 
   // -------------------------------------------------------------- render
 
-  function buildDiseaseSelect(names) {
-    el.diseaseSelect.replaceChildren();
+  function buildDatasetSelect(names) {
+    el.datasetSelect.replaceChildren();
     for (const name of names) {
-      el.diseaseSelect.appendChild(option(name, state.diseases[name].display_name));
+      el.datasetSelect.appendChild(option(name, state.datasets[name].display_name));
     }
-    el.diseaseSelect.addEventListener('change', (event) => selectDisease(event.target.value));
+    el.datasetSelect.addEventListener('change', (event) => selectDataset(event.target.value));
   }
 
-  function selectDisease(name) {
+  function selectDataset(name) {
     state.current = name;
-    el.diseaseSelect.value = name;
+    el.datasetSelect.value = name;
 
-    const disease = state.diseases[name];
+    const dataset = state.datasets[name];
 
     el.modelSelect.replaceChildren();
-    for (const model of disease.models) {
+    for (const model of dataset.models) {
       el.modelSelect.appendChild(option(model.name, model.display_name));
     }
     // Match the model the API would pick if model_type were omitted, rather
     // than whichever happens to sort first.
-    el.modelSelect.value = disease.default_model;
-    renderFields(disease.features);
+    el.modelSelect.value = dataset.default_model;
+    renderFields(dataset.features);
     hideResult();
   }
 
@@ -158,14 +158,14 @@
   el.form.addEventListener('submit', async function (event) {
     event.preventDefault();
 
-    const disease = state.diseases[state.current];
+    const dataset = state.datasets[state.current];
     const payload = {
-      disease: state.current,
+      dataset: state.current,
       model_type: el.modelSelect.value,
     };
 
     let hasLocalError = false;
-    disease.features.forEach((feature) => {
+    dataset.features.forEach((feature) => {
       const value = document.getElementById('field-' + feature.name).value;
       payload[feature.name] = value;
       if (value === '') {
@@ -175,7 +175,7 @@
     });
 
     if (hasLocalError) {
-      showError('Please fill in every measurement.');
+      showError('Please fill in every field.');
       return;
     }
 
@@ -209,10 +209,11 @@
   // ------------------------------------------------------------ results
 
   function showPrediction(result) {
-    const positive = result.prediction === 1;
-    const disease = state.diseases[state.current];
+    const dataset = state.datasets[state.current];
 
-    el.result.className = 'result ' + (positive ? 'high' : 'low');
+    // Green for an outcome that is good for the bank, red otherwise. Which
+    // prediction counts as good is decided per dataset on the server.
+    el.result.className = 'result ' + result.outcome;
     el.result.hidden = false;
 
     const headline = headlineNode(result.summary);
@@ -223,11 +224,11 @@
     method.className = 'result-detail result-method';
     method.textContent = modelDisplayName(result.model_used);
 
-    const dataset = document.createElement('p');
-    dataset.className = 'result-detail';
-    dataset.textContent = disease.description;
+    const source = document.createElement('p');
+    source.className = 'result-detail';
+    source.textContent = dataset.description;
 
-    el.result.replaceChildren(headline, method, dataset);
+    el.result.replaceChildren(headline, method, source);
 
     if (result.probability != null) {
       el.result.appendChild(buildConfidenceBar(result.probability));
@@ -240,9 +241,7 @@
 
     const labels = document.createElement('div');
     labels.className = 'confidence-labels';
-    // Each label needs its own element: adjacent bare text nodes collapse into
-    // a single anonymous flex item, which is why the value used to butt up
-    // against the label with no gap.
+    // Each label needs its own element so the flex layout spaces them apart.
     labels.append(span('Model-estimated probability'), span(probability + '%'));
 
     const track = document.createElement('div');
@@ -311,11 +310,11 @@
   function setLoading(isLoading) {
     el.submit.disabled = isLoading;
     el.submit.classList.toggle('loading', isLoading);
-    el.submit.querySelector('.btn-label').textContent = isLoading ? 'Analysing…' : 'Analyse risk';
+    el.submit.querySelector('.btn-label').textContent = isLoading ? 'Analysing…' : 'Run prediction';
   }
 
   function modelDisplayName(name) {
-    const model = state.diseases[state.current].models.find((m) => m.name === name);
+    const model = state.datasets[state.current].models.find((m) => m.name === name);
     return model ? model.display_name : name;
   }
 

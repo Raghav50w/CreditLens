@@ -1,4 +1,4 @@
-# Runtime dependencies.
+# Dependencies.
 # Versions are pinned because the models are saved as pickles: an unpinned
 # scikit-learn can fail to unpickle them after a minor version bump.
 numpy==2.4.6
@@ -7,3 +7,8 @@ scikit-learn==1.8.0
 fastapi==0.141.1
 uvicorn[standard]==0.52.4
 pydantic==2.13.5
+
+# Tests and lint.
+pytest==8.4.2
+httpx2==2.12.0
+ruff==0.14.0

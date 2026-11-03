@@ -1,5 +1,0 @@
-# Development dependencies. Install the runtime ones first:
-#   pip install -r requirements.txt -r requirements-dev.txt
-pytest==8.4.2
-httpx2==2.12.0
-ruff==0.14.0

@@ -4,17 +4,18 @@ import numpy as np
 import pandas as pd
 import pytest
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
-from healthscan.config import DATASETS_DIR, RANDOM_STATE
-from healthscan.ml.evaluate import holdout_scores, make_pipeline
-from healthscan.ml.train import train_disease
+from creditlens.config import DATASETS_DIR, MODEL_DISPLAY_NAMES, RANDOM_STATE
+from creditlens.ml.evaluate import holdout_scores, make_pipeline
+from creditlens.ml.train import train_dataset
 
 
 @pytest.fixture(scope="session")
 def trained(tmp_path_factory):
-    """Train diabetes once for the whole session - fitting an MLP is slow."""
+    """Train the Acquire dataset once for the whole session - it is the smallest."""
     models_dir = tmp_path_factory.mktemp("models")
-    result = train_disease(DATASETS_DIR / "diabetes.csv", "diabetes", models_dir=models_dir)
+    result = train_dataset(DATASETS_DIR / "loan_offer.csv", "loan_offer", models_dir=models_dir)
     return result, models_dir
 
 
@@ -39,6 +40,20 @@ def test_holdout_scores_are_not_training_scores():
     assert holdout_scores(fitted, X_test, y_test)["accuracy"] < 0.75
 
 
+def test_pipeline_fills_missing_values():
+    """The Credit Risk CSV keeps NaNs; the pipeline must fill them."""
+    rng = np.random.default_rng(RANDOM_STATE)
+    X = rng.normal(size=(100, 3))
+    X[::7, 1] = np.nan
+    y = rng.integers(0, 2, size=100)
+
+    # LogisticRegression rejects NaN outright, so this only passes if the
+    # pipeline imputes first.
+    fitted = make_pipeline(LogisticRegression()).fit(X, y)
+
+    assert fitted.predict_proba(X).shape == (100, 2)
+
+
 def test_training_is_deterministic(trained, tmp_path):
     """random_state=42 means the published numbers are reproducible.
 
@@ -47,8 +62,8 @@ def test_training_is_deterministic(trained, tmp_path):
     the very last decimal place can wobble between identical runs.
     """
     first, _ = trained
-    second = train_disease(
-        DATASETS_DIR / "diabetes.csv", "diabetes", models_dir=tmp_path / "again"
+    second = train_dataset(
+        DATASETS_DIR / "loan_offer.csv", "loan_offer", models_dir=tmp_path / "again"
     )
 
     for name in first["models"]:
@@ -76,23 +91,26 @@ def test_writes_every_expected_artifact(trained):
     for path in models_dir.iterdir():
         written.add(path.name)
 
-    assert written == {
-        "diabetes_features.json",
-        "diabetes_scaler.json",
-        "diabetes_random_forest.pkl",
-        "diabetes_naive_bayes.pkl",
-        "diabetes_mlp.pkl",
-        "diabetes_perceptron.pkl",
-    }
+    expected = {f"loan_offer_{name}.pkl" for name in MODEL_DISPLAY_NAMES}
+    assert written == expected
+
+
+def test_models_beat_the_majority_class_baseline(trained):
+    """A model that cannot out-rank "always predict the majority" is useless."""
+    result, _ = trained
+
+    assert result["baseline"]["roc_auc"] == pytest.approx(0.5)
+    for model in result["models"].values():
+        assert model["holdout"]["roc_auc"] > result["baseline"]["roc_auc"]
 
 
 @pytest.mark.parametrize(
-    ("disease", "rows"),
-    [("diabetes", 768), ("heart_disease", 303), ("breast_cancer", 569)],
+    ("dataset", "rows"),
+    [("loan_offer", 5000), ("credit_risk", 32_409), ("attrition", 10_127)],
 )
-def test_expected_row_counts(disease, rows):
+def test_expected_row_counts(dataset, rows):
     """Catches preprocessing silently dropping or duplicating records."""
-    df = pd.read_csv(DATASETS_DIR / f"{disease}.csv")
+    df = pd.read_csv(DATASETS_DIR / f"{dataset}.csv")
 
     assert len(df) == rows
     assert set(df.iloc[:, -1].unique()) <= {0, 1}

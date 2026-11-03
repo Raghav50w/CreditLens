@@ -1,13 +1,6 @@
-# Normalise line endings. Development happens on Windows; CI, Docker, and
-# Render all run Linux, so everything is stored as LF in the repository.
+# Store everything with LF line endings: development is on Windows, but CI,
+# Docker and Render run Linux.
 * text=auto eol=lf
 
-# Datasets are data, not source - never touch their bytes.
-*.csv text eol=lf
-datasets/raw/*.data -text
-
-# Binary artifacts (not committed, but be explicit).
+# Trained models are binary.
 *.pkl binary
-*.png binary
-*.jpg binary
-*.ico binary

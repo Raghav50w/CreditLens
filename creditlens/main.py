@@ -1,6 +1,6 @@
 """The web API.
 
-    uvicorn healthscan.main:app --reload
+uvicorn creditlens.main:app --reload
 """
 
 import logging
@@ -9,14 +9,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from healthscan.config import DEFAULT_MODEL, STATIC_DIR
-from healthscan.registry import ModelRegistry
-from healthscan.schemas import PredictRequest, validate_features
+from creditlens.config import DEFAULT_MODEL, STATIC_DIR
+from creditlens.registry import ModelRegistry
+from creditlens.schemas import PredictRequest, validate_features
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(message)s")
 log = logging.getLogger(__name__)
 
-app = FastAPI(title="HealthScanner", docs_url="/docs")
+app = FastAPI(title="CreditLens")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 registry = ModelRegistry()
@@ -31,15 +31,11 @@ def index():
 @app.get("/healthz")
 def healthz():
     """Liveness probe for Render."""
-    return {
-        "status": "ok",
-        "ready": registry.is_ready,
-        "diseases": sorted(registry.diseases),
-    }
+    return {"status": "ok", "datasets": sorted(registry.datasets)}
 
 
-@app.get("/api/diseases")
-def get_diseases():
+@app.get("/api/datasets")
+def get_datasets():
     return registry.catalog()
 
 
@@ -50,37 +46,36 @@ def get_metrics():
 
 @app.post("/api/predict")
 def predict(request: PredictRequest):
-    disease = request.disease
-    if disease not in registry.diseases:
-        available = sorted(registry.diseases)
+    dataset = request.dataset
+    if dataset not in registry.datasets:
+        available = sorted(registry.datasets)
         return JSONResponse(
             status_code=404,
-            content={"error": f"Unknown disease '{disease}'. Available: {available}"},
+            content={"error": f"Unknown dataset '{dataset}'. Available: {available}"},
         )
 
     model_type = request.model_type or DEFAULT_MODEL
-    models = registry.diseases[disease]["models"]
+    models = registry.datasets[dataset]["models"]
     if model_type not in models:
         available = sorted(models)
         return JSONResponse(
             status_code=404,
             content={
                 "error": (
-                    f"Model '{model_type}' is not available for '{disease}'. "
-                    f"Available: {available}"
+                    f"Model '{model_type}' is not available for '{dataset}'. Available: {available}"
                 )
             },
         )
 
-    features = registry.diseases[disease]["features"]
-    values, errors = validate_features(disease, features, request.feature_values())
+    features = registry.datasets[dataset]["features"]
+    values, errors = validate_features(dataset, features, request.model_extra or {})
     if errors:
         return JSONResponse(
             status_code=400,
             content={"error": "One or more inputs are invalid.", "fields": errors},
         )
 
-    return registry.predict(disease, model_type, values)
+    return registry.predict(dataset, model_type, values)
 
 
 @app.exception_handler(Exception)

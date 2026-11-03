@@ -23,21 +23,21 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: requirements*.txt
+          cache-dependency-path: requirements.txt
 
       - name: Install
-        run: pip install -r requirements.txt -r requirements-dev.txt
+        run: pip install -r requirements.txt
 
       - name: Lint
         run: ruff check .
 
       - name: Build datasets
-        run: python -m healthscan.ml.preprocess
+        run: python -m creditlens.ml.preprocess
 
       # Doubles as a smoke test: if training breaks, CI fails here rather than
       # shipping stale artifacts.
       - name: Train models
-        run: python -m healthscan.ml.train
+        run: python -m creditlens.ml.train
 
       - name: Test
         run: pytest
@@ -57,13 +57,13 @@ jobs:
         with:
           context: .
           load: true
-          tags: healthscan:${{ github.sha }}
+          tags: creditlens:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Smoke test the image
         run: |
-          docker run -d --name healthscan -p 5000:5000 healthscan:${{ github.sha }}
+          docker run -d --name creditlens -p 5000:5000 creditlens:${{ github.sha }}
           for attempt in $(seq 1 30); do
             if curl -fsS http://localhost:5000/healthz > /tmp/health.json; then
               break
@@ -71,5 +71,5 @@ jobs:
             sleep 2
           done
           cat /tmp/health.json
-          grep -q '"ready":true' /tmp/health.json
-          docker rm -f healthscan
+          grep -q '"status":"ok"' /tmp/health.json
+          docker rm -f creditlens

@@ -3,24 +3,24 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HealthScanner &mdash; Multi-Disease Risk Assessment</title>
-    <meta name="description" content="Multi-disease risk assessment for diabetes, heart disease, and breast cancer. A student project, not a medical tool.">
+    <title>CreditLens &mdash; Bank Credit &amp; Customer Analytics</title>
+    <meta name="description" content="Customer analytics across the bank lifecycle: acquire, lend, retain. A learning project, not a production credit tool.">
     <link rel="stylesheet" href="/static/css/styles.css">
   </head>
 
   <body>
     <main class="shell">
       <header class="masthead">
-        <h1>HealthScanner</h1>
-        <p class="tagline">Multi-disease risk assessment with scikit-learn</p>
+        <h1>CreditLens</h1>
+        <p class="tagline">Acquire, lend, retain: customer analytics with scikit-learn</p>
       </header>
 
       <div class="card">
         <form id="assessment-form" novalidate>
           <div class="selectors">
             <div class="field">
-              <label for="disease-select">Condition</label>
-              <select id="disease-select" name="disease"></select>
+              <label for="dataset-select">Dataset</label>
+              <select id="dataset-select" name="dataset"></select>
             </div>
 
             <div class="field">
@@ -32,12 +32,12 @@
           <hr class="divider">
 
           <fieldset class="measurements">
-            <legend>Measurements</legend>
+            <legend>Customer details</legend>
             <div class="grid" id="dynamic-fields"></div>
           </fieldset>
 
           <button type="submit" id="submit-btn">
-            <span class="btn-label">Analyse risk</span>
+            <span class="btn-label">Run prediction</span>
             <span class="spinner" aria-hidden="true"></span>
           </button>
         </form>
@@ -47,11 +47,11 @@
 
       <footer class="colophon">
         <p class="disclaimer">
-          This is a student learning project, not a professional medical tool.
-          It should not be used for diagnosis or treatment choices.
+          This is a learning project for bank staff analytics, not a production credit tool.
+          It should not be used for real lending or customer decisions.
         </p>
         <p class="links">
-          <a href="/api/diseases">API</a>
+          <a href="/api/datasets">API</a>
           <span aria-hidden="true">&middot;</span>
           <a href="/api/metrics">Metrics</a>
           <span aria-hidden="true">&middot;</span>

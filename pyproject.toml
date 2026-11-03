@@ -11,7 +11,7 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Put the repo root on sys.path so `import healthscan` works. Without this,
+# Put the repo root on sys.path so `import creditlens` works. Without this,
 # plain `pytest` fails while `python -m pytest` succeeds, because only the
 # second one adds the current directory automatically.
 pythonpath = ["."]

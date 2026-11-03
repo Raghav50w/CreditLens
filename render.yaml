@@ -2,7 +2,7 @@
 # ("New > Blueprint"); pushes to main deploy automatically after that.
 services:
   - type: web
-    name: healthscanner
+    name: creditlens
     runtime: docker
     plan: free
     region: oregon
